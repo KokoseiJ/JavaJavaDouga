@@ -17,20 +17,18 @@ import java.util.Map;
 
 public class NicoAPI {
     private static final URI getThumbInfoURI;
+    private static final URI mylistURI;
     static {
         URI value = null;
         try {
             value = new URI("http://ext.nicovideo.jp/api/getthumbinfo/");
-        } catch(URISyntaxException ignored) {}
+        } catch (URISyntaxException ignored) {}
         getThumbInfoURI = value;
-    }
-    private static final URI snapShotSearchURI;
-    static {
-        URI value = null;
+        value = null;
         try {
-            value = new URI("https://api.search.nicovideo.jp/api/v2/snapshot/video/contents/search/");
+            value = new URI("https://nvapi.nicovideo.jp/v2/mylists/");
         } catch(URISyntaxException ignored) {}
-        snapShotSearchURI = value;
+        mylistURI = value;
     }
 
     private static final HttpClient defaultHttpClient = HttpClient.newHttpClient();
@@ -38,15 +36,15 @@ public class NicoAPI {
             .newBuilder()
             .headers("User-Agent", "JavaJavaDougaAPI");
 
-    public static NicoMap<String, String> getThumbInfo(String videoId)
-            throws FailedThumbResponseException, IOException, InterruptedException {
+    public static Map<String, String> getThumbInfo(String videoId)
+            throws FailedResponseException, IOException, InterruptedException {
         HttpRequest httpRequest;
         HttpResponse<InputStream> httpResponse;
         InputStream httpInputStream;
         Document document;
         Element rootNode;
         NodeList nodeList;
-        NicoMap<String, String> thumbInfo;
+        Map<String, String> thumbInfo;
 
         httpRequest = defaultHttpBuilder
                 .GET()
@@ -82,10 +80,10 @@ public class NicoAPI {
                     .getElementsByTagName("description")
                     .item(0)
                     .getTextContent();
-            throw new FailedThumbResponseException(code + ": " + desc);
+            throw new FailedResponseException(code + ": " + desc);
         }
 
-        thumbInfo = new NicoMap<String, String>();
+        thumbInfo = new NicoMap<>();
 
         nodeList = rootNode.getElementsByTagName("thumb").item(0).getChildNodes();
         for(int i = 0; i < nodeList.getLength(); i++) {
@@ -96,13 +94,10 @@ public class NicoAPI {
         return thumbInfo;
     }
 
-
+    public static SnapShotSearch.SnapShotSearchBuilder getSnapShotSearchBuilder() {
+        return new SnapShotSearch.SnapShotSearchBuilder();
+    }
 
     public static void main(String[] args) {
-        try {
-            System.out.println(getThumbInfo("sm28242091").getInt("Something that doesn't exist"));
-        } catch(Exception e){
-            e.printStackTrace();
-        }
     }
 }
