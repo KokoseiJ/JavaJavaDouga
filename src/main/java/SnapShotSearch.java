@@ -8,34 +8,68 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SnapShotSearch {
-    private static URI uri;
+    private final static URI snapShotSearchURI;
     static {
-        URI value = null;
+        URI value;
         try {
             value = new URI("https://api.search.nicovideo.jp/api/v2/snapshot/video/contents/search");
-        } catch(URISyntaxException ignored) {}
-        uri = value;
+        } catch(URISyntaxException ignored) {
+            throw new RuntimeException("Failed to generate URI object and the god is dead");
+        }
+        snapShotSearchURI = value;
     }
 
-    public SnapShotSearchBuilder builder;
+    private final SnapShotSearchBuilder builder;
 
-    private SnapShotSearch(SnapShotSearchBuilder builder)
-            throws IOException, InterruptedException, FailedResponseException {
+    private SnapShotSearch(SnapShotSearchBuilder builder) {
         this.builder = builder;
+    }
 
+    private String getQuery() {
+        String value;
+        StringBuilder returnString = new StringBuilder();
+
+        for(Map.Entry<String, String> entry: builder.parameters.entrySet()) {
+            if((value = entry.getValue()) != null){
+                if(returnString.length() > 0) returnString.append("&");
+                returnString.append(entry.getKey()).append("=").append(value);
+            }
+        }
+
+        return returnString.toString();
+    }
+
+    private URI getURI() {
+        URI uri = snapShotSearchURI;
+        String query = getQuery();
+        URI returnURI = null;
+        try {
+            returnURI = new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), query, uri.getFragment());
+        } catch(URISyntaxException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+        return returnURI;
+    }
+
+    public Map<String, Object> getResult() throws IOException, InterruptedException, FailedResponseException {
+        URI uri;
         HttpClient client;
         HttpRequest request;
         HttpResponse<String> response;
         Charset charset;
         JSONObject json;
-
         try {
             charset = Charset.forName("ISO8601");
         } catch(UnsupportedCharsetException e) {
             charset = Charset.defaultCharset();
         }
+
+        uri = getURI();
 
         client = HttpClient.newBuilder().build();
         request = HttpRequest.newBuilder()
@@ -50,65 +84,67 @@ public class SnapShotSearch {
             JSONObject meta = json.getJSONObject("meta");
             String code = meta.getString("errorCode");
             String message = meta.getString("errorMessage");
-            throw new FailedResponseException(code + ": " + message);
+            throw new FailedResponseException(code + ": " + message, code, message);
         }
-
+        return json.toMap();
     }
 
     public static class SnapShotSearchBuilder {
-        private String query = null;
-        private String targets = null;
-        private String fields = null;
-        private String filters = null;
-        private String jsonFilter = null;
-        private String sort = null;
-        private int offset = 0;
-        private int limit = 10;
-        private String context = "JavaJavaDougaAPI";
+        private final Map<String, String> parameters = new HashMap<>();
         private String userAgent = "JavaJavaDougaAPI";
 
         public SnapShotSearchBuilder setQuery(String query) {
-            this.query = query;
+            parameters.put("q", query);
             return this;
         }
 
         public SnapShotSearchBuilder setTargets(String targets) {
-            this.targets = targets;
+            parameters.put("targets", targets);
             return this;
         }
 
         public SnapShotSearchBuilder setFields(String fields) {
-            this.fields = fields;
+            parameters.put("fields", fields);
             return this;
         }
 
         public SnapShotSearchBuilder setFilters(String filters) {
-            this.filters = filters;
+            parameters.put("filters", filters);
             return this;
         }
 
         public SnapShotSearchBuilder setJsonFilter(String jsonFilter) {
-            this.jsonFilter = jsonFilter;
+            parameters.put("jsonFilter", jsonFilter);
             return this;
         }
 
         public SnapShotSearchBuilder setSort(String sort) {
-            this.sort = sort;
+            parameters.put("_sort", sort);
             return this;
         }
 
         public SnapShotSearchBuilder setOffset(int offset) {
-            this.offset = offset;
+            parameters.put("_offset", Integer.toString(offset));
+            return this;
+        }
+
+        public SnapShotSearchBuilder setOffset(String offset) {
+            parameters.put("_offset", offset);
             return this;
         }
 
         public SnapShotSearchBuilder setLimit(int limit) {
-            this.limit = limit;
+            parameters.put("_limit", Integer.toString(limit));
+            return this;
+        }
+
+        public SnapShotSearchBuilder setLimit(String limit) {
+            parameters.put("_limit", limit);
             return this;
         }
 
         public SnapShotSearchBuilder setContext(String context) {
-            this.context = context;
+            parameters.put("_context", context);
             return this;
         }
 
@@ -121,7 +157,12 @@ public class SnapShotSearch {
             return this.setContext(appName).setUserAgent(appName);
         }
 
-        public SnapShotSearch build() throws IOException, InterruptedException, FailedResponseException{
+        public SnapShotSearchBuilder set(String key, String value) {
+            parameters.put(key, value);
+            return this;
+        }
+
+        public SnapShotSearch build() {
             return new SnapShotSearch(this);
         }
 

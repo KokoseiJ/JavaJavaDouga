@@ -17,18 +17,17 @@ import java.util.Map;
 
 public class NicoAPI {
     private static final URI getThumbInfoURI;
-    private static final URI mylistURI;
+    private static final URI myListURI;
     static {
-        URI value = null;
+        URI value;
         try {
             value = new URI("http://ext.nicovideo.jp/api/getthumbinfo/");
-        } catch (URISyntaxException ignored) {}
-        getThumbInfoURI = value;
-        value = null;
-        try {
+            getThumbInfoURI = value;
             value = new URI("https://nvapi.nicovideo.jp/v2/mylists/");
-        } catch(URISyntaxException ignored) {}
-        mylistURI = value;
+            myListURI = value;
+        } catch(URISyntaxException ignored) {
+            throw new RuntimeException("Failed to generate URI object");
+        }
     }
 
     private static final HttpClient defaultHttpClient = HttpClient.newHttpClient();
@@ -60,11 +59,9 @@ public class NicoAPI {
                     .newDocumentBuilder()
                     .parse(httpInputStream);
         } catch(ParserConfigurationException e) {
-            System.err.println("Failed to created new Document builder.");
-            return null;
+            throw new RuntimeException("ParserConfigurationException has occurred.");
         } catch(SAXException e) {
-            System.err.println("Failed to parse the XML document.");
-            return null;
+            throw new FailedResponseException("Failed to parse the XML file.");
         }
         rootNode = document.getDocumentElement();
 
@@ -80,7 +77,7 @@ public class NicoAPI {
                     .getElementsByTagName("description")
                     .item(0)
                     .getTextContent();
-            throw new FailedResponseException(code + ": " + desc);
+            throw new FailedResponseException(code + ": " + desc, code, desc);
         }
 
         thumbInfo = new NicoMap<>();
@@ -96,8 +93,5 @@ public class NicoAPI {
 
     public static SnapShotSearch.SnapShotSearchBuilder getSnapShotSearchBuilder() {
         return new SnapShotSearch.SnapShotSearchBuilder();
-    }
-
-    public static void main(String[] args) {
     }
 }
