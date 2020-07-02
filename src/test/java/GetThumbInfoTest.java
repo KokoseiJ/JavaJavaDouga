@@ -14,7 +14,7 @@ public class GetThumbInfoTest {
     @Test
     @DisplayName("NM video test")
     void nmVideoTest() {
-        //
+        //Agoaniki - Double Lariat
         assertDoesNotThrow(() -> NicoAPI.getThumbInfo("nm6049209"));
     }
 }
