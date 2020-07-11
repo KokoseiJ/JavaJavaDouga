@@ -73,7 +73,7 @@ public class NicoAPI {
         }
         rootNode = document.getDocumentElement();
 
-        if(httpResponse.statusCode() != 200) {
+        if(rootNode.getAttribute("status").equals("fail")) {
             Element error = (Element) rootNode
                     .getElementsByTagName("error")
                     .item(0);
