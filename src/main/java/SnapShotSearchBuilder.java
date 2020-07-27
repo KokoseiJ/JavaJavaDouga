@@ -1,9 +1,46 @@
+import java.io.IOException;
+import java.net.CookieHandler;
+import java.net.http.HttpClient;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SnapShotSearchBuilder {
-    protected final Map<String, String> parameters = new HashMap<>();
-    protected String userAgent = "JavaJavaDougaAPI";
+    private final Map<String, String> parameters = new HashMap<>();
+    private final List<String> headers = new ArrayList<>();
+    private HttpClient httpClient;
+    private CookieHandler cookieHandler;
+
+    public SnapShotSearchBuilder() {
+        String fields = "contentId," +"title," + "description," + "viewCounter," + "mylistCounter," + "lengthSeconds," +
+                "thumbnailUrl," + "startTime," + "lastResBody," + "commentCounter," + "lastCommentTime," + "categoryTags," +
+                "tags," + "genre";
+        this    .setTargets("title,description,tags")
+                .setFields(fields)
+                .setSort("viewCounter")
+                .setAppName(NicoAPI.defaultUserAgent);
+    }
+
+    public SnapShotSearchBuilder setHttpClient(HttpClient client) {
+        this.httpClient = client;
+        return this;
+    }
+
+    public SnapShotSearchBuilder setCookieHandler(CookieHandler handler) {
+        this.cookieHandler = handler;
+        return this;
+    }
+
+    public SnapShotSearchBuilder setAppName(String appName) {
+        return this.setContext(appName).setUserAgent(appName);
+    }
+
+    public SnapShotSearchBuilder setHeader(String key, String value) {
+        headers.add(key);
+        headers.add(value);
+        return this;
+    }
 
     public SnapShotSearchBuilder setQuery(String query) {
         parameters.put("q", query);
@@ -61,12 +98,7 @@ public class SnapShotSearchBuilder {
     }
 
     public SnapShotSearchBuilder setUserAgent(String userAgent) {
-        this.userAgent = userAgent;
-        return this;
-    }
-
-    public SnapShotSearchBuilder setAppName(String appName) {
-        return this.setContext(appName).setUserAgent(appName);
+        return this.setHeader("User-Agent", userAgent);
     }
 
     public SnapShotSearchBuilder set(String key, String value) {
@@ -74,8 +106,8 @@ public class SnapShotSearchBuilder {
         return this;
     }
 
-    public SnapShotSearch build() {
-        return new SnapShotSearch(this);
+    public SnapShotSearch build() throws InterruptedException, IOException, FailedResponseException {
+        return new SnapShotSearch(parameters, (String[]) headers.toArray(), httpClient, cookieHandler);
     }
 
 }

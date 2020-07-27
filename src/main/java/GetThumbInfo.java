@@ -29,7 +29,6 @@ public class GetThumbInfo {
     }
 
     public final String videoId;
-
     public final String title;
     public final String description;
     public final URI thumbnailUri;
@@ -53,6 +52,13 @@ public class GetThumbInfo {
     public final String userNickname;
     public final URI userIconUri;
 
+    public static GetThumbInfo getThumbInfo(String videoId)
+            throws IOException, InterruptedException, FailedResponseException {
+        return new GetThumbInfoBuilder()
+                .setVideoId(videoId)
+                .build();
+    }
+
     protected GetThumbInfo(
             String videoId, String[] headers, HttpClient client, CookieHandler cookieHandler)
             throws IOException, InterruptedException, FailedResponseException {
@@ -72,7 +78,7 @@ public class GetThumbInfo {
         this.videoId = videoId;
 
         if(client == null) {
-            HttpClient.Builder builder = new HttpClient.newBuilder();
+            HttpClient.Builder builder = HttpClient.newBuilder();
             if(cookieHandler != null)
                 builder.cookieHandler(cookieHandler);
             client = builder.build();
@@ -148,7 +154,6 @@ public class GetThumbInfo {
             String stackTrace = sw.toString();
             throw new RuntimeException("Failed to parse URI from a returned value.\nStack trace: " + stackTrace);
         }
-
 
         tag = (Element)thumbNode.getElementsByTagName("tags").item(0);
         tagList = tag.getElementsByTagName("tag");

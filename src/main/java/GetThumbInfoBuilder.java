@@ -11,9 +11,13 @@ import java.util.Map;
 public class GetThumbInfoBuilder {
     private String videoId = null;
     private String userAgent = NicoAPI.defaultUserAgent;
-    private List<String> headers = new ArrayList<String>();
+    private List<String> headers = new ArrayList<>();
     private HttpClient httpClient = null;
     private CookieHandler cookieHandler = null;
+
+    public GetThumbInfoBuilder() {
+        this.setHeader("User-Agent", userAgent);
+    }
 
     public GetThumbInfoBuilder setVideoId(String videoId) {
         this.videoId = videoId;
@@ -44,12 +48,9 @@ public class GetThumbInfoBuilder {
     public GetThumbInfo build() throws IOException, InterruptedException, FailedResponseException {
         if (videoId == null)
             throw new RuntimeException("videoId value is not set.");
-        this.setHeader("User-Agent", userAgent);
 
         return new GetThumbInfo(videoId, (String[])headers.toArray(), httpClient, cookieHandler);
     }
-
-    public GetThumbInfoBuilder(){}
 
     public GetThumbInfoBuilder(String videoId) {
         this.setVideoId(videoId);
